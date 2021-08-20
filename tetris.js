@@ -40,3 +40,66 @@ function drawBoard(){
 }
 
 drawBoard();
+
+// we create a external file tetrominoes.js
+// the pieces and their colors
+
+const PIECES = [
+    [Z,"red"],
+    [S,"green"],
+    [T,"yellow"],
+    [O,"blue"],
+    [L,"purple"],
+    [I,"cyan"],
+    [J,"orange"]
+];
+
+// generate random pieces
+
+function randomPiece(){
+    let r = randomN = Math.floor(Math.random() * PIECES.length) // 0 -> 6
+    return new Piece( PIECES[r][0],PIECES[r][1]);
+}
+
+let p = randomPiece();
+
+/* The Object Piece, we create this prototype with the funtion Piece,
+we use this keyword to define objects */
+
+function Piece(tetromino,color){ 
+    this.tetromino = tetromino;
+    this.color = color;
+    
+    this.tetrominoN = 0; // we start from the first pattern
+    this.activeTetromino = this.tetromino[this.tetrominoN]; //z0
+    
+    // we need to control the pieces we setup how the piece go down
+    this.x = 3;
+    this.y = -2;
+}
+
+// fill function
+
+Piece.prototype.fill = function(color){
+    for( r = 0; r < this.activeTetromino.length; r++){
+        for(c = 0; c < this.activeTetromino.length; c++){
+            // we draw only occupied squares
+            if( this.activeTetromino[r][c]){
+                drawSquare(this.x + c,this.y + r, color);
+            }
+        }
+    }
+}
+
+// draw a piece to the board
+
+Piece.prototype.draw = function(){
+    this.fill(this.color);
+}
+
+// undraw a piece
+
+
+Piece.prototype.unDraw = function(){
+    this.fill(VACANT);
+}
