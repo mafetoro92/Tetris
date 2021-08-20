@@ -103,3 +103,182 @@ Piece.prototype.draw = function(){
 Piece.prototype.unDraw = function(){
     this.fill(VACANT);
 }
+
+/*In moving funtion we work together with collision we check if move left
+right or down can be collision */
+
+// move Down the piece
+Piece.prototype.moveDown = function(){
+    if(!this.collision(0,1,this.activeTetromino)){
+        this.unDraw();
+        this.y++;
+        this.draw();
+    }else{
+        // we lock the piece and generate a new one
+        this.lock();
+        p = randomPiece(); //we generete random piece 
+    }
+    
+}
+
+// move Right the piece
+Piece.prototype.moveRight = function(){
+    if(!this.collision(1,0,this.activeTetromino)){
+        this.unDraw();
+        this.x++;
+        this.draw();
+    }
+}
+
+// move Left the piece
+Piece.prototype.moveLeft = function(){
+    if(!this.collision(-1,0,this.activeTetromino)){
+        this.unDraw();
+        this.x--;
+        this.draw();
+    }
+}
+
+// rotate the piece we use modulo % to move the 0 -> 1->2->3
+Piece.prototype.rotate = function(){
+    let nextPattern = this.tetromino[(this.tetrominoN + 1)%this.tetromino.length];
+    let kick = 0;
+    
+    if(this.collision(0,0,nextPattern)){
+        if(this.x > COL/2){
+            // it's the right wall
+            kick = -1; // we need to move the piece to the left
+        }else{
+            // it's the left wall
+            kick = 1; // we need to move the piece to the right
+        }
+    }
+    
+    if(!this.collision(kick,0,nextPattern)){
+        this.unDraw();
+        this.x += kick;
+        this.tetrominoN = (this.tetrominoN + 1)%this.tetromino.length; // (0+1)%4 => 1
+        this.activeTetromino = this.tetromino[this.tetrominoN];
+        this.draw();
+    }
+}
+
+let score = 0;
+
+// lock funtion we can lock the tretomino and game over
+Piece.prototype.lock = function(){
+    for( r = 0; r < this.activeTetromino.length; r++){
+        for(c = 0; c < this.activeTetromino.length; c++){
+            // we skip the vacant squares
+            if( !this.activeTetromino[r][c]){
+                continue;
+            }
+            // pieces to lock on top = game over
+            if(this.y + r < 0){
+                alert("Game Over");
+                // stop request animation frame
+                gameOver = true;
+                break;
+            }
+            // we lock the piece
+            board[this.y+r][this.x+c] = this.color;
+        }
+    }
+    // remove full rows and increment the score
+    for(r = 0; r < ROW; r++){ //we loop over all rows to the board
+        let isRowFull = true;
+        for( c = 0; c < COL; c++){
+            isRowFull = isRowFull && (board[r][c] != VACANT); //we validate if its full
+        }
+        if(isRowFull){
+            // if the row is full
+            // we move down all the rows above it
+            for( y = r; y > 1; y--){
+                for( c = 0; c < COL; c++){
+                    board[y][c] = board[y-1][c];
+                }
+            }
+            // the top row board[0][..] has no row above it
+            for( c = 0; c < COL; c++){
+                board[0][c] = VACANT;
+            }
+            // increment the score
+            score += 10;
+        }
+    }
+    // update the board
+    drawBoard();
+    
+    // update the score
+    scoreElement.innerHTML = score;
+}
+
+// collision fucntion if the collision is flase you can move but if it is true
+//dont move this funtion work together with movement funtions
+
+Piece.prototype.collision = function(x,y,piece){
+    for( r = 0; r < piece.length; r++){
+        for(c = 0; c < piece.length; c++){
+            // if the square is empty, we skip it
+            if(!piece[r][c]){
+                continue;
+            }
+            // coordinates of the piece after movement
+            let newX = this.x + c + x;
+            let newY = this.y + r + y;
+            
+            // conditions cheking if there are collition x<0 left or right > x
+            if(newX < 0 || newX >= COL || newY >= ROW){
+                return true;
+            }
+            // skip newY < 0; board[-1] will crush our game
+            if(newY < 0){
+                continue;
+            }
+            // check if there is a locked piece alrady in place
+            if( board[newY][newX] != VACANT){
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+// CONTROL the piece, every key on the keyboard has a code
+/* We create a event keydown with the funtion CONTROL, this funtion
+execute the left up right or down*/ 
+document.addEventListener("keydown",CONTROL);
+
+function CONTROL(event){
+    if(event.keyCode == 37){ // left
+        p.moveLeft();
+        dropStart = Date.now();
+    }else if(event.keyCode == 38){// up
+        p.rotate();
+        dropStart = Date.now();
+    }else if(event.keyCode == 39){ //Right 
+        p.moveRight();
+        dropStart = Date.now();
+    }else if(event.keyCode == 40){ //down
+        p.moveDown();
+    }
+}
+
+// drop the piece every 1sec
+
+let dropStart = Date.now();
+let gameOver = false;
+let int= setInterval(drop,1000)
+function drop(){
+    let now = Date.now();
+    let delta = now - dropStart;
+    if(delta > 1000){
+        p.moveDown();
+        dropStart = Date.now();
+    }
+    if( !gameOver){
+        requestAnimationFrame(drop);
+    }
+}
+
+int();
