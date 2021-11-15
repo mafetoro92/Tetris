@@ -11,4 +11,3 @@ If you want to see the project in action please check the link below.
 
 Link: https://mafetoro92.github.io/Tetris/
 
-<img src="">
